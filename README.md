@@ -1,4 +1,4 @@
-#### Mean Shift Segmentation
+### Mean Shift Segmentation
 Author        : Bingyang Liu
 
 For details tutorial of Meash Shift Segmentation, please check [my blog][2].
