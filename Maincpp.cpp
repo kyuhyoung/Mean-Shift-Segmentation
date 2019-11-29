@@ -34,7 +34,7 @@ void display_each_color(const Mat& mat_label, const Mat& im_bgr, int th_area)
         imshow("im_color_each", im_color_each); waitKey();
 
     }
-    exit(0);
+    //exit(0);
  
 }
 
@@ -118,7 +118,7 @@ int main(int argc, char** argv){
 	Mat mat_label = MSProc.MSSegmentation(im_lab);
 
     display_each_color(mat_label, im_bgr, th_area);
-
+/*
     double minVal, maxVal; Point minLoc, maxLoc;
     minMaxLoc(mat_label, &minVal, &maxVal, &minLoc, &maxLoc, Mat() );
     cout << "b4 minVal : " << minVal << ",\tmaxVal : " << maxVal << endl;
@@ -137,7 +137,7 @@ int main(int argc, char** argv){
 	// Show the result image
 	namedWindow("MS Picture", WINDOW_NORMAL);
 	imshow("MS Picture", im_bgr);
-
+*/
 	waitKey();
 	return 1;
 }
