@@ -22,14 +22,15 @@ void display_each_color(const Mat& mat_label, const Mat& im_bgr, int th_area)
 {
     double minVal, maxVal; Point minLoc, maxLoc;
     minMaxLoc(mat_label, &minVal, &maxVal, &minLoc, &maxLoc);
+    namedWindow("im_color_each", WINDOW_NORMAL);
     for(int iL = int(minVal); iL <= int(maxVal); iL++)
     {
         Mat im_color_each = Mat::zeros(mat_label.size(), CV_8UC3), im_level_each;
         inRange(mat_label, iL, iL, im_level_each);
         int n_nz = countNonZero(im_level_each);
-        //cout << "iL : " << iL << ",\t n_nz : " << n_nz << endl;
         if(n_nz < th_area) continue;
         im_bgr.copyTo(im_color_each, im_level_each);
+        cout << "iL : " << iL << " / " << int(maxVal) << ",\t n_nz : " << n_nz << endl;
         imshow("im_color_each", im_color_each); waitKey();
 
     }
@@ -39,7 +40,6 @@ void display_each_color(const Mat& mat_label, const Mat& im_bgr, int th_area)
 
 Size compute_size_smaller_than(const Size& size_src, const Size& size_tgt)
 {
-    cout << "size_src : " << size_src << endl << "size_tgt : " << size_tgt << endl;
     Size size_smaller_than(size_src);
     if((size_src.width > size_tgt.width && size_src.height > size_tgt.height) ||
         (size_src.width < size_tgt.width && size_src.height < size_tgt.height))
@@ -99,7 +99,9 @@ int main(int argc, char** argv){
     Mat im_lab, im_bgr = imread( argv[1] );
     int bandwidth_spatial = atoi(argv[2]), bandwidth_color = atoi(argv[3]), th_area = atoi(argv[4]);
     Size sz_small = compute_size_smaller_than(im_bgr.size(), Size(320, 240));  
+    cout << "b4 resize im_bgr.size() : " << im_bgr.size() << endl;
 	resize(im_bgr, im_bgr, sz_small);
+    cout << "after resize im_bgr.size() : " << im_bgr.size() << endl;
 	// Show that image
 	namedWindow("The Original Picture");
 	imshow("The Original Picture", im_bgr);
