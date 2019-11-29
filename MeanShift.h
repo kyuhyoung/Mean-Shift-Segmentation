@@ -1,7 +1,7 @@
 //---------------- Head  File ---------------------------------------
-#include <opencv2\core\core.hpp>
-#include <opencv2\highgui\highgui.hpp>
-#include <opencv2\imgproc\imgproc.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
 #include <iostream>
 
@@ -39,5 +39,6 @@ class MeanShift{
 	public:
 		MeanShift(float, float);									// Constructor for spatial bandwidth and color bandwidth
 		void MSFiltering(Mat&);										// Mean Shift Filtering
-		void MSSegmentation(Mat&);									// Mean Shift Segmentation
+		//void MSSegmentation(Mat&);									// Mean Shift Segmentation
+		Mat MSSegmentation(Mat&);									// Mean Shift Segmentation
 };

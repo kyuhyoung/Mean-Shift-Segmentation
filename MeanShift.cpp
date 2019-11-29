@@ -151,12 +151,15 @@ void MeanShift::MSFiltering(Mat& Img){
 	}
 }
 
-void MeanShift::MSSegmentation(Mat& Img){
+//void MeanShift::MSSegmentation(Mat& Img){
+Mat MeanShift::MSSegmentation(Mat& Img){
 
 //---------------- Mean Shift Filtering -----------------------------
 	// Same as MSFiltering function
 	int ROWS = Img.rows;
 	int COLS = Img.cols;
+    cout << "ROWS : " << ROWS << endl;
+    cout << "COLS : " << COLS << endl;
 	split(Img, IMGChannels);
 
 	Point5D PtCur;
@@ -304,8 +307,26 @@ void MeanShift::MSSegmentation(Mat& Img){
 //--------------- Delete Memory Applied Before -----------------------
 	delete[] Mode;
 	delete[] MemberModeCount;
-	
+    
+/*
+    Mat mat_label = Mat::zeros(ROWS, COLS, CV_32SC1);
+    std::memcpy(mat_label.data, Labels, ROWS * COLS * sizeof(int));
+*/
+    Mat mat_label = Mat::zeros(ROWS, COLS, CV_32SC1);
+
+    for(int i = 0; i < ROWS; i++){
+		for(int j = 0; j < COLS; j++){
+			mat_label.at<int>(i, j) = Labels[i][j];
+		}
+	}
+    /*
+    double minVal, maxVal; Point minLoc, maxLoc;
+    minMaxLoc(mat_label, &minVal, &maxVal, &minLoc, &maxLoc, Mat() );
+    cout << "minVal : " << minVal << ",\tmaxVal : " << maxVal << endl;
+	*/
 	for(int i = 0; i < ROWS; i++)
 		delete[] Labels[i];
 	delete[] Labels;
+
+    return mat_label;
 }
