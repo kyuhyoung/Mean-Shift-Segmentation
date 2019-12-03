@@ -9,17 +9,22 @@
 #include "MeanShift.h"
 #include "Timer.h"
 
+#define WIDTH_SMALL     160
+#define HEIGHT_SMALL    120
+
+
 typedef struct _Input 
 {
-    _Input(int sb, int cb, int ma)
+    _Input(int sb, int cb, float ra, float rl)
     {
-        m_spatial_bandwidth = sb;   m_color_bandwidth = cb; m_min_area = ma; 
-        m_sb_init = sb;             m_cb_init = cb;         m_ma_init = ma;
+        m_spatial_bandwidth = sb;   m_color_bandwidth = cb; m_ratio_area = ra;  m_ratio_length = rl; 
+        m_sb_init = sb;             m_cb_init = cb;         m_ra_init = ra;
         //m_ms = MeanShift(m_sb_init, m_cb_init);
     }
     Mat m_im_bgr;
     //Size m_sz_small;
-    int m_spatial_bandwidth, m_color_bandwidth, m_min_area, m_sb_init, m_cb_init, m_ma_init;
+    int m_spatial_bandwidth, m_color_bandwidth, m_sb_init, m_cb_init;
+    float m_ratio_area, m_ra_init, m_ratio_length;
     //MeanShift m_ms;
     vector<Scalar> m_li_bgr;
 } Input;
@@ -99,24 +104,26 @@ vector<Scalar> generate_random_color_list(unsigned int n_color)
 
 
 
-Mat draw_segmentation(const Mat& mat_label, const Mat& im_bgr, const vector<Scalar>& li_bgr, int sb, int cb, int th_area, 
-    int minV_int, int maxV_int)
+Mat draw_segmentation(const Mat& mat_label, const Mat& im_bgr, const vector<Scalar>& li_bgr, int sb, int cb, float ratio_area, float ratio_length, int minV_int, int maxV_int)
 {
     Mat im_bgr_segmented = im_bgr.clone();    
     //double minVal, maxVal; Point minLoc, maxLoc;
     //minMaxLoc(mat_label, &minVal, &maxVal, &minLoc, &maxLoc);
-    int iL, iC = 0;//, minVal_int = minVal, maxVal_int = maxVal;
+    Size sz = mat_label.size();
+    int iL, iC = 0, th_area = ratio_area * sz.width * sz.height, th_width = ratio_length * sz.width, th_height = ratio_length * sz.height;//, minVal_int = minVal, maxVal_int = maxVal;
     //namedWindow("im_color_each", WINDOW_NORMAL);
     //vector<Scalar> li_bgr = generate_random_color_list(maxVal_int);
     for(iL = minV_int; iL <= maxV_int; iL++)
     {
-        Mat im_color_each = Mat::zeros(mat_label.size(), CV_8UC3), im_level_each;
+        Mat im_color_each = Mat::zeros(sz, CV_8UC3), im_level_each;
         inRange(mat_label, iL, iL, im_level_each);
         int n_nz = countNonZero(im_level_each);
         if(n_nz < th_area) continue;
         vector<vector<Point> > contours;
         //vector<Vec4i> hierarchy;
         findContours(im_level_each, contours, /*hierarchy,*/ CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+        RotatedRect rect = minAreaRect(Mat(contours[0]));
+        if(rect.size.width > th_width || rect.size.height > th_height) continue;
         drawContours(im_bgr_segmented, contours, 0, li_bgr[iC++], 2, 8);
     }
     float sz_font = 1.0;
@@ -215,7 +222,7 @@ bool proc_common(Output& output, const Input& input)
     
     int minV_int = minVal, maxV_int = maxVal;
     
-    output.m_im_segmented = draw_segmentation(mat_label, input.m_im_bgr, input.m_li_bgr, input.m_spatial_bandwidth, input.m_color_bandwidth, input.m_min_area, minV_int, maxV_int);
+    output.m_im_segmented = draw_segmentation(mat_label, input.m_im_bgr, input.m_li_bgr, input.m_spatial_bandwidth, input.m_color_bandwidth, input.m_ratio_area, input.m_ratio_length, minV_int, maxV_int);
     
     return true;
           
@@ -225,7 +232,8 @@ bool proc_img(const string& path_img, Input& input)
 {
     Output output;
     input.m_im_bgr = cv::imread(path_img, CV_LOAD_IMAGE_COLOR);
-    Size sz_small = compute_size_smaller_than(input.m_im_bgr.size(), Size(320, 240));  
+    Size sz_small = compute_size_smaller_than(input.m_im_bgr.size(), Size(WIDTH_SMALL, HEIGHT_SMALL));  
+    //Size sz_small = input.m_im_bgr.size();  
     resize(input.m_im_bgr, input.m_im_bgr, sz_small);
     //output.m_im_segmented = input.m_im_bgr.clone();
     input.m_li_bgr = generate_random_color_list(sz_small.width + sz_small.height);
@@ -248,7 +256,7 @@ int proc_cam(int idx_cam, Input& input)
         cerr << "에러 - 카메라를 열 수 없습니다.\n";    return false;
     }
     Size sz_cur(cap.get(CV_CAP_PROP_FRAME_WIDTH), cap.get(CV_CAP_PROP_FRAME_HEIGHT));
-    Size sz_small = compute_size_smaller_than(sz_cur, Size(320, 240));  
+    Size sz_small = compute_size_smaller_than(sz_cur, Size(WIDTH_SMALL, HEIGHT_SMALL));  
     input.m_li_bgr = generate_random_color_list(sz_small.width + sz_small.height);
     //cap.set(CV_CAP_PROP_FRAME_WIDTH, 640);  cap.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
     namedWindow("im_segmented", WINDOW_NORMAL);    
@@ -281,9 +289,9 @@ int proc_cam(int idx_cam, Input& input)
             else if('d' == ch) input.m_color_bandwidth = MIN(100, (1.0 + 0.2) * input.m_color_bandwidth);
             else if('s' == ch) input.m_color_bandwidth = input.m_cb_init;
             
-            else if('z' == ch) input.m_min_area = MAX(50, (1.0 - 0.2) * input.m_min_area);
-            else if('x' == ch) input.m_min_area = MIN(10000, (1.0 + 0.2) * input.m_min_area);
-            else if('c' == ch) input.m_min_area = input.m_ma_init;
+            else if('z' == ch) input.m_ratio_area = MAX(0.001, (1.0 - 0.3) * input.m_ratio_area);
+            else if('x' == ch) input.m_ratio_area = MIN(0.5, (1.0 + 0.3) * input.m_ratio_area);
+            else if('c' == ch) input.m_ratio_area = input.m_ra_init;
             
         }
         cout << "FPS : " << timer.updateFPS() << endl;
@@ -295,12 +303,13 @@ int proc_cam(int idx_cam, Input& input)
 int main(int argc, char** argv)
 {
     //if( argc !=2 )
-    if( argc != 5 )
+    if( argc != 6 )
     {
         help(argv); return -1;
     }
-    int bandwidth_spatial = atoi(argv[2]), bandwidth_color = atoi(argv[3]), th_area = atoi(argv[4]);
-    Input input(bandwidth_spatial, bandwidth_color, th_area);
+    int bandwidth_spatial = atoi(argv[2]), bandwidth_color = atoi(argv[3]);
+    float ratio_area = atof(argv[4]), ratio_length = atof(argv[5]);
+    Input input(bandwidth_spatial, bandwidth_color, ratio_area, ratio_length);
     return is_this_camera_index(argv[1]) ? proc_cam(atoi(argv[1]), input) : proc_img(argv[1], input);
 }    
 
