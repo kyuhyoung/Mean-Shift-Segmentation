@@ -87,10 +87,16 @@ void Point5D::Print(){
 	cout<<x<<" "<<y<<" "<<l<<" "<<a<<" "<<b<<endl;
 }
 
-// Constructor for spatial bandwidth and color bandwidth
-MeanShift::MeanShift(float s, float r){
-	hs = s;
+void MeanShift::reset(float s, float r)
+{
+ 	hs = s;
 	hr = r;
+    IMGChannels.clear();   
+}
+// Constructor for spatial bandwidth and color bandwidth
+MeanShift::MeanShift(float s, float r)
+{
+    reset(s, r);
 }
 
 // Mean Shift Filtering
@@ -158,8 +164,7 @@ Mat MeanShift::MSSegmentation(Mat& Img){
 	// Same as MSFiltering function
 	int ROWS = Img.rows;
 	int COLS = Img.cols;
-    cout << "ROWS : " << ROWS << endl;
-    cout << "COLS : " << COLS << endl;
+    //cout << "ROWS : " << ROWS << endl << "COLS : " << COLS << endl;
 	split(Img, IMGChannels);
 
 	Point5D PtCur;

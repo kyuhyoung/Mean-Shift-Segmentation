@@ -38,7 +38,8 @@ class MeanShift{
 		vector<Mat> IMGChannels;
 	public:
 		MeanShift(float, float);									// Constructor for spatial bandwidth and color bandwidth
-		void MSFiltering(Mat&);										// Mean Shift Filtering
+		void reset(float, float);
+        void MSFiltering(Mat&);										// Mean Shift Filtering
 		//void MSSegmentation(Mat&);									// Mean Shift Segmentation
 		Mat MSSegmentation(Mat&);									// Mean Shift Segmentation
 };
