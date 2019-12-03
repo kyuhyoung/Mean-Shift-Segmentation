@@ -126,9 +126,10 @@ vector<vector<Point> > draw_segmentation(Mat& im_bgr_segmented, const Mat& mat_l
         drawContours(im_bgr_segmented, contours, 0, li_bgr[iC++], 2, 8);
         li_contour.push_back(contours[0]);
     }
-    float sz_font = 1.0;
+    float sz_font = float(sz.width + sz.height) / float(400 * 2);
+    //cout << "sz_font : " << sz_font << endl;
     Scalar kolor = CV_RGB(0, 255, 0);
-    int x_txt = MAX(10, im_bgr_segmented.cols * 0.5 - 100), y_txt = 40, y_int = 30, iT = 0;
+    int x_txt = MAX(10, im_bgr_segmented.cols * 0.5 - 100 * sz_font), y_txt = 40, y_int = 35 * sz_font, iT = 0;
     putText(im_bgr_segmented, "spatial : " + to_string(sb), Point(x_txt, y_txt + y_int * iT++), FONT_HERSHEY_DUPLEX, sz_font, kolor, 0.5, CV_AA); 
     putText(im_bgr_segmented, "color : " + to_string(cb), Point(x_txt, y_txt + y_int * iT++), FONT_HERSHEY_DUPLEX, sz_font, kolor, 0.5, CV_AA); 
     putText(im_bgr_segmented, "area : " + to_string(th_area), Point(x_txt, y_txt + y_int * iT++), FONT_HERSHEY_DUPLEX, sz_font, kolor, 0.5, CV_AA); 
@@ -247,7 +248,7 @@ bool proc_img(const string& path_img, Input& input)
 }
 
 
-int proc_cam(int idx_cam, Input& input)
+bool proc_cam(int idx_cam, Input& input)
 {
     Output output;
     Timer timer;    timer.Start();
@@ -257,7 +258,9 @@ int proc_cam(int idx_cam, Input& input)
         cerr << "에러 - 카메라를 열 수 없습니다.\n";    return false;
     }
     Size sz_cur(cap.get(CV_CAP_PROP_FRAME_WIDTH), cap.get(CV_CAP_PROP_FRAME_HEIGHT));
+    //cout << "sz_cur : " << sz_cur << endl;  //exit(0);
     Size sz_small = compute_size_smaller_than(sz_cur, Size(WIDTH_SMALL, HEIGHT_SMALL));  
+    //cout << "sz_small : " << sz_small << endl;  exit(0);
     input.m_li_bgr = generate_random_color_list(sz_small.width + sz_small.height);
     //cap.set(CV_CAP_PROP_FRAME_WIDTH, 640);  cap.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
     namedWindow("im_segmented", WINDOW_NORMAL);    
@@ -272,7 +275,9 @@ int proc_cam(int idx_cam, Input& input)
         // 영상을 화면에 보여줍니다.
         //output.m_im_segmented = input.m_im_bgr.clone();
         //cvtColor(input.im_bgr, input.im_gray, CV_BGR2GRAY);
+        //cout << "AAA" << endl;
         proc_common(output, input);
+        //cout << "BBB" << endl;
         imshow("im_segmented", output.m_im_segmented); 
         // ESC 키를 입력하면 루프가 종료됩니다.
         char ch = waitKey(1);
@@ -298,6 +303,7 @@ int proc_cam(int idx_cam, Input& input)
         cout << "FPS : " << timer.updateFPS() << endl;
         //input.m_ms.reset(input.m_spatial_bandwidth, input.m_color_bandwidth);
     }
+    return true;
 }
 
 
