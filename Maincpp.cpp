@@ -43,8 +43,6 @@ typedef struct _Output
 
 
 
-int g_spatial_max = 30, g_color_max = 100, g_area_max = 400;
-
 static void help(char** argv)
 {
     cout << "\nDemonstrate mean-shift based color segmentation in spatial pyramid.\n"
@@ -104,9 +102,10 @@ vector<Scalar> generate_random_color_list(unsigned int n_color)
 
 
 
-Mat draw_segmentation(const Mat& mat_label, const Mat& im_bgr, const vector<Scalar>& li_bgr, int sb, int cb, float ratio_area, float ratio_length, int minV_int, int maxV_int)
+vector<vector<Point> > draw_segmentation(Mat& im_bgr_segmented, const Mat& mat_label, const Mat& im_bgr, const vector<Scalar>& li_bgr, int sb, int cb, float ratio_area, float ratio_length, int minV_int, int maxV_int)
 {
-    Mat im_bgr_segmented = im_bgr.clone();    
+    vector<vector<Point> > li_contour;
+    im_bgr_segmented = im_bgr.clone();    
     //double minVal, maxVal; Point minLoc, maxLoc;
     //minMaxLoc(mat_label, &minVal, &maxVal, &minLoc, &maxLoc);
     Size sz = mat_label.size();
@@ -125,6 +124,7 @@ Mat draw_segmentation(const Mat& mat_label, const Mat& im_bgr, const vector<Scal
         RotatedRect rect = minAreaRect(Mat(contours[0]));
         if(rect.size.width > th_width || rect.size.height > th_height) continue;
         drawContours(im_bgr_segmented, contours, 0, li_bgr[iC++], 2, 8);
+        li_contour.push_back(contours[0]);
     }
     float sz_font = 1.0;
     Scalar kolor = CV_RGB(0, 255, 0);
@@ -134,7 +134,8 @@ Mat draw_segmentation(const Mat& mat_label, const Mat& im_bgr, const vector<Scal
     putText(im_bgr_segmented, "area : " + to_string(th_area), Point(x_txt, y_txt + y_int * iT++), FONT_HERSHEY_DUPLEX, sz_font, kolor, 0.5, CV_AA); 
     //imshow("im_color_each", im_bgr);   waitKey(1);
     //exit(0);
-    return im_bgr_segmented; 
+    //return im_bgr_segmented; 
+    return li_contour; 
 }
 
 Size compute_size_smaller_than(const Size& size_src, const Size& size_tgt)
@@ -222,7 +223,7 @@ bool proc_common(Output& output, const Input& input)
     
     int minV_int = minVal, maxV_int = maxVal;
     
-    output.m_im_segmented = draw_segmentation(mat_label, input.m_im_bgr, input.m_li_bgr, input.m_spatial_bandwidth, input.m_color_bandwidth, input.m_ratio_area, input.m_ratio_length, minV_int, maxV_int);
+    vector<vector<Point> > li_contour = draw_segmentation(output.m_im_segmented, mat_label, input.m_im_bgr, input.m_li_bgr, input.m_spatial_bandwidth, input.m_color_bandwidth, input.m_ratio_area, input.m_ratio_length, minV_int, maxV_int);
     
     return true;
           
